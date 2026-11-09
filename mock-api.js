@@ -47,9 +47,12 @@
   var state = null;
   try { state = JSON.parse(sessionStorage.getItem(KEY)); } catch (e) {}
   var demoLogin = /[?&]demo=login/.test(location.search);
+  // ?demo=login&inapp=1: the sign-in card as a built-in browser shows it (Instagram on iPhone).
+  var demoInApp = /[?&]inapp=1/.test(location.search);
+  if (demoInApp) { try { Object.defineProperty(navigator, "userAgent", {get: function () { return "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 320.0.0.0"; }}); } catch (e) {} }
   if (demoLogin || /[?&]demo=start/.test(location.search)) {
     state = null;
-    try { history.replaceState(null, "", location.pathname); } catch (e) {}
+    try { history.replaceState(null, "", location.pathname + (demoInApp ? "?inapp=1" : "")); } catch (e) {}
   }
   if (!state) { state = blank(); clearStale(); }
   // ?demo=login: the real sign-in screen, then a brand new user (3 free reels, empty list). No Google, no account.
