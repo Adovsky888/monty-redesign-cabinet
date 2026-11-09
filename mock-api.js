@@ -401,9 +401,9 @@
     var pill = document.createElement("a");
     pill.textContent = "Макет · все экраны";
     pill.href = BASE + "/ekrany.html";
-    pill.style.cssText = "position:fixed;right:84px;bottom:22px;z-index:99998;background:rgba(255,255,255,.1);color:#fff;padding:5px 12px;border-radius:999px;font:600 11px system-ui;text-decoration:none";
+    pill.style.cssText = "position:fixed;right:12px;top:10px;z-index:99998;background:rgba(255,255,255,.1);color:#fff;padding:5px 12px;border-radius:999px;font:600 11px system-ui;text-decoration:none";
     document.body.appendChild(pill);
-    var pill2 = pill.cloneNode(); pill2.textContent = "Лендинг"; pill2.href = "https://adovsky888.github.io/monty-redesign-landing/ru/"; pill2.style.right = "215px"; document.body.appendChild(pill2);
+    var pill2 = pill.cloneNode(); pill2.textContent = "Лендинг"; pill2.href = "https://adovsky888.github.io/monty-redesign-landing/ru/"; pill2.style.right = "142px"; document.body.appendChild(pill2);
     if (empty) setTimeout(function () { var a = [].slice.call(document.querySelectorAll('a[href$="#packs"]')).filter(function (x) { return x.offsetParent; })[0]; if (a) a.click(); }, 1200);
   });
 })();
