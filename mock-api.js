@@ -359,6 +359,7 @@
     };
     setTimeout(function () {
       if (ended) return;
+      if (!viewJob(id)) { self.readyState = 2; var er = {}; (self._l.error || []).forEach(function (f) { f(er); }); if (self.onerror) self.onerror(er); return; }
       if (self.onopen) self.onopen({});
       (self._l.open || []).forEach(function (f) { f({}); });
       pulse();
