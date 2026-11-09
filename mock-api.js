@@ -192,7 +192,7 @@
       return paySheet("Здесь откроется оплата", "Это демо, платёж не проводится. Начислим " + n + " роликов на баланс, чтобы было видно результат.", "Начислить и вернуться", function () {
         state.balance += n;
         if (b.tier) state.tier = b.tier;
-        ledgerAdd(n, "purchase", null);
+        ledgerAdd(n, "grant:creem:demo", null);
         save();
         if (b.tier) { location.href = BASE + "/account?paid=1"; return; }
         state.flash = "Начислено роликов: " + n; save();
