@@ -61,7 +61,7 @@
     if (method === "GET") {
       if (p === "/api/me") return json(200, {id: "demo", email: "demo@example.com", name: "Демо", auth_provider: "google", plan_tier: empty ? "free" : "creator", can_publish: true});
       if (p === "/api/admin/me") return json(200, {email: "demo@example.com", is_admin: false});
-      if (p === "/api/account") return json(200, {balance: empty ? 0 : 12, billing: {enabled: true, packs: [{bananas: 10, price_cents: 2500}, {bananas: 30, price_cents: 6500}, {bananas: 100, price_cents: 19000}]}, free_balance: empty ? 0 : 3, free_cap: 3});
+      if (p === "/api/account") return json(200, {balance: empty ? 0 : 12, billing: {enabled: true, packs: [{bananas: 3, price_cents: 900}, {bananas: 5, price_cents: 1400}, {bananas: 10, price_cents: 2500}, {bananas: 30, price_cents: 6500}, {bananas: 100, price_cents: 19000}]}, free_balance: empty ? 0 : 3, free_cap: 3});
       if (p === "/api/account/ledger") return json(200, {entries: [
         {id: "l1", delta: -1, reason: "run", job_id: null, project_id: null, project_title: "Как считать калории по фото", created_at: day(1)},
         {id: "l2", delta: 3, reason: "welcome", job_id: null, project_id: null, project_title: null, created_at: day(9)}]});
