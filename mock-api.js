@@ -28,6 +28,7 @@
       artifacts: [{kind: "cover", key: "c", bytes: 1, url: BASE + "/fixtures/ai-network/t0.jpg"}]};
     if (id === "pic-f") return {job_id: id, slug: "Цена айфона в кредит", status: "failed", type: "render_final", created_at: day(1), updated_at: day(1), error_code: "demo_mock", error_id: "E-DEMO",
       stages: [{stage: "proxy", status: "failed", error_code: "demo_mock", error_id: "E-DEMO", step: "Обрабатываем медиа"}], artifacts: []};
+    if (!/^pic-\d$/.test(id)) return null;
     var n = (id.match(/pic-(\d)/) || [0, "0"])[1], running = n === "2";
     var title = {0: "Старый ролик про дедлайны", 1: "Как считать калории по фото", 2: "Рассталась и начала бизнес", 3: "Анализ тарелки за 5 секунд"}[n];
     return {job_id: id, slug: title, status: running ? "running" : "done", type: "render_final", created_at: day(0), updated_at: day(0), report: running ? undefined : report,
