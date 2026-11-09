@@ -73,6 +73,7 @@
       if (m) return json(200, jobOf(m[1]));
       if (/^\/api\/jobs\/[^/]+\/publish-meta$/.test(p)) return json(200, META);
     }
+    if (method === "POST" && /\/commit$/.test(p)) return json(200, {});
     if (method !== "GET") { toast(); return json(400, {error: "demo_mock", error_code: "demo_mock", error_id: "E-DEMO"}); }
     return json(404, {error: "not_found", error_code: "not_found", error_id: "E-DEMO"});
   };
@@ -89,20 +90,23 @@
   window.EventSource = function (u) {
     var self = this, id = (String(u).match(/jobs\/([^/]+)\/events/) || [0, "pic-0"])[1];
     this.readyState = 1; this.close = function () { this.readyState = 2; };
-    this.addEventListener = function (type, fn) { if (type === "message") this._m = fn; };
+    this._l = {}; this.addEventListener = function (type, fn) { (this._l[type] = this._l[type] || []).push(fn); if (type === "message") this._m = fn; };
     this.removeEventListener = function () {};
     setTimeout(function () {
       var ev = {data: JSON.stringify(jobOf(id))};
-      if (self.onopen) self.onopen({});
+      if (self.onopen) self.onopen({}); (self._l.open || []).forEach(function (f) { f({}); }); (self._l.job || []).forEach(function (f) { f(ev); }); (self._l.snapshot || []).forEach(function (f) { f(ev); });
       if (self._m) self._m(ev);
       if (self.onmessage) self.onmessage(ev);
     }, 60);
   };
+  (function(){var L="https://adovsky888.github.io/monty-redesign-landing/ru/";
+    function fix(a){var h=a.getAttribute("href")||"";if(/^https:\/\/monty\.fast(\/((ru|en|ko|zh|es)\/?)?)?(\?.*)?$/.test(h)){a.href=L;a.removeAttribute("target");}}
+    document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[href]");if(a)fix(a);},true);})();
   document.addEventListener("DOMContentLoaded", function () {
     var pill = document.createElement("a");
     pill.textContent = "Макет · все экраны";
     pill.href = BASE + "/ekrany.html";
-    pill.style.cssText = "position:fixed;right:14px;top:14px;z-index:99998;background:rgba(255,255,255,.1);color:#fff;padding:5px 12px;border-radius:999px;font:600 11px system-ui;text-decoration:none";
+    pill.style.cssText = "position:fixed;right:84px;bottom:22px;z-index:99998;background:rgba(255,255,255,.1);color:#fff;padding:5px 12px;border-radius:999px;font:600 11px system-ui;text-decoration:none";
     document.body.appendChild(pill);
     if (empty) setTimeout(function () { var a = [].slice.call(document.querySelectorAll('a[href$="#packs"]')).filter(function (x) { return x.offsetParent; })[0]; if (a) a.click(); }, 1200);
   });
