@@ -152,6 +152,7 @@
   var META = {title: "6 из 8 приёмов за смену", description: "Демо-описание ролика.", source: "transcript",
     youtube: {title: "6 из 8 приёмов за смену", description: "Демо-описание для YouTube.", tags: ["монтаж", "reels"]},
     instagram: {caption: "Демо-подпись для Instagram #монтаж"}, tiktok: {title: "Демо-подпись для TikTok #монтаж"}};
+  var TIKTOK_INFO = {privacy_level_options: ["PUBLIC_TO_EVERYONE", "MUTUAL_FOLLOW_FRIENDS", "SELF_ONLY"], creator_nickname: "Демо", creator_username: "demo", comment_disabled: false, duet_disabled: false, stitch_disabled: false, max_video_post_duration_sec: 600};
   var json = function (code, body) { return new Response(JSON.stringify(body), {status: code, headers: {"content-type": "application/json"}}); };
   var toastEl;
   var toast = function (msg) {
@@ -215,12 +216,14 @@
         {id: "l2", delta: 3, reason: "welcome", job_id: null, project_id: null, project_title: null, created_at: day(9)}])});
       if (p === "/api/account/payments") return json(200, {payments: []});
       if (p === "/api/projects") return json(200, {projects: allProjects()});
-      if (p === "/api/connections") return json(200, {publishing_enabled: true, youtube_audited: true, platforms_enabled: {youtube: true, instagram: true, tiktok: true}, connections: [
-        {platform: "youtube", status: "connected", handle: "Демо-канал"}, {platform: "instagram", status: "connected", handle: "demo"}, {platform: "tiktok", status: "revoked"}]});
+      if (p === "/api/connections") return json(200, {publishing_enabled: true, youtube_audited: true, platforms_enabled: {youtube: true, instagram: false, tiktok: true}, platforms_disabled_reason: {instagram: "not_granted"}, connections: [
+        {platform: "youtube", status: "connected", handle: "Демо-канал"}].concat(state.tiktok ? [{platform: "tiktok", status: "connected", handle: "demo"}] : [])});
+      if (p === "/api/connections/tiktok/creator-info") return json(200, TIKTOK_INFO);
       var m = p.match(/^\/api\/jobs\/([^/]+)$/);
       if (m) { var jv = viewJob(m[1]); return jv ? json(200, jv) : json(404, {error: "not_found", error_code: "not_found", error_id: "E-DEMO"}); }
       if ((m = p.match(/^\/api\/jobs\/([^/]+)\/publish-meta$/))) return json(200, state.meta[m[1]] || META);
     }
+    if (method === "DELETE" && p === "/api/connections/tiktok") { delete state.tiktok; save(); return json(200, {}); }
     if (method === "POST" && /^\/api\/billing\//.test(p)) return billing(p, b);
     if (method === "POST" && p === "/api/uploads") {
       if (b.sha256) {
@@ -398,6 +401,11 @@
       e.preventDefault(); e.stopImmediatePropagation();
       delete state.login; save();
       location.replace(BASE + "/");
+      return;
+    }
+    if (/\/auth\/tiktok\/login/.test(h)) {
+      e.preventDefault(); e.stopImmediatePropagation();
+      state.tiktok = true; save(); location.reload();
       return;
     }
     if (/\/mock\/\d\.mp4(\?|$)/.test(h)) a.setAttribute("download", "monty-rolik.mp4");
