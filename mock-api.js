@@ -74,7 +74,7 @@
     if (j.kind === "chain" && done) type = "palette";
     var out = {job_id: id, slug: j.title, status: j.cancelled ? "failed" : done ? "done" : "running", type: type, created_at: new Date(j.t0).toISOString(), updated_at: new Date(now).toISOString(), stages: stages, artifacts: []};
     if (j.cancelled) out.cancelled = true;
-    if (j.kind === "chain" && e > 5000 && !j.cancelled) out.artifacts = [{kind: "cover", key: "demo/cover.jpg", bytes: 40000, url: COVER}];
+    if ((j.kind === "chain" && e > 5000 || j.kind === "final" && !done) && !j.cancelled) out.artifacts = [{kind: "cover", key: "demo/cover.jpg", bytes: 40000, url: COVER}];
     if (j.kind === "final" && done) {
       var src = j.src || 89;
       out.report = {source_s: Math.round(src), final_s: Math.round(src * 0.62), kept_until: future(30), cuts: ["соцсеть, в которую, ой, давай заново", "ну и вот, короче"]};
@@ -150,7 +150,7 @@
     instagram: {caption: "Демо-подпись для Instagram #монтаж"}, tiktok: {title: "Демо-подпись для TikTok #монтаж"}};
   var json = function (code, body) { return new Response(JSON.stringify(body), {status: code, headers: {"content-type": "application/json"}}); };
   var toastEl;
-  var toast = function () {
+  var toast = function (msg) {
     if (!document.body) return;
     if (!toastEl) {
       toastEl = document.createElement("div");
@@ -158,6 +158,7 @@
       toastEl.textContent = "Это макет: действие не выполняется";
       document.body.appendChild(toastEl);
     }
+    toastEl.textContent = typeof msg === "string" ? msg : "Это макет: действие не выполняется";
     toastEl.style.display = "block";
     clearTimeout(toast.t);
     toast.t = setTimeout(function () { toastEl.style.display = "none"; }, 2600);
@@ -188,7 +189,9 @@
         if (b.tier) state.tier = b.tier;
         ledgerAdd(n, "purchase", null);
         save();
-        location.href = BASE + "/account?paid=1";
+        if (b.tier) { location.href = BASE + "/account?paid=1"; return; }
+        state.flash = "Начислено роликов: " + n; save();
+        location.href = BASE + "/account";
       });
     }
     return paySheet("Управление подпиской", "В демо этот шаг только показывается, настоящей подписки здесь нет.", null);
@@ -226,7 +229,9 @@
     if (method === "POST" && p === "/api/jobs") {
       if (b.type === "scenario") {
         var sp = ensureProject(b.slug, "Новый сценарий", "scenario"), sj = startJob("scenario", sp);
-        state.scen[b.slug] = {job: sj, dump: (b.params && b.params.dump) || "", version: 0}; save();
+        state.scen[b.slug] = {job: sj, dump: (b.params && b.params.dump) || "", version: 0};
+        if (state.balance > 0) { state.balance -= 1; ledgerAdd(-1, "run", sp.title); sp.charged = true; }
+        save();
         return json(202, {job_id: sj});
       }
       if (b.type === "plan") return json(202, {job_id: startJob("aux", null)});
@@ -238,13 +243,13 @@
         var rj = startJob("final", rp, {from: from || null, src: fj && fj.src});
         return json(202, {job_id: rj});
       }
-      if (state.balance <= 0) return json(402, {error: "insufficient_credits", error_code: "insufficient_credits", error_id: "E-DEMO"});
+      var chk = findProject(b.slug); if (state.balance <= 0 && !(chk && chk.charged)) return json(402, {error: "insufficient_credits", error_code: "insufficient_credits", error_id: "E-DEMO"});
       var mint = b.upload_id && state.mints[b.upload_id];
       var cp = ensureProject(b.slug, cleanName(mint && mint.name), "upload");
       cp.bound = true;
       if (mint) cp.source = mint.name;
-      state.balance -= 1;
-      ledgerAdd(-1, "run", cp.title);
+      if (cp.charged) cp.charged = false;
+      else { state.balance -= 1; ledgerAdd(-1, "run", cp.title); }
       return json(202, {job_id: startJob("chain", cp, {src: b.params && b.params.duration_s})});
     }
     if ((mm = p.match(/^\/api\/jobs\/([^/]+)\/cancel$/)) && method === "POST") {
@@ -391,6 +396,7 @@
     }
   }, true);
   document.addEventListener("DOMContentLoaded", function () {
+    if (state.flash) { var fl = state.flash; delete state.flash; save(); setTimeout(function () { toast(fl); }, 400); }
     if (/\/(upload|preview)(\.html)?$/.test(location.pathname)) return; // these screens have a fixed bottom bar with the main button
     var pill = document.createElement("a");
     pill.textContent = "Макет · все экраны";
