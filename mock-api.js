@@ -45,11 +45,14 @@
   };
   var state = null;
   try { state = JSON.parse(sessionStorage.getItem(KEY)); } catch (e) {}
-  if (/[?&]demo=start/.test(location.search)) {
+  var demoLogin = /[?&]demo=login/.test(location.search);
+  if (demoLogin || /[?&]demo=start/.test(location.search)) {
     state = null;
     try { history.replaceState(null, "", location.pathname); } catch (e) {}
   }
   if (!state) { state = blank(); clearStale(); }
+  // ?demo=login: the real sign-in screen, then a brand new user (3 free reels, empty list). No Google, no account.
+  if (demoLogin) { state.login = true; state.fresh = true; state.balance = 3; }
   var save = function () { try { sessionStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
   save();
   var nextId = function (p) { state.seq += 1; return p + "-" + state.seq + "-" + Date.now().toString(36); };
@@ -126,6 +129,7 @@
   var allProjects = function () {
     var mine = state.projects.map(viewProject), slugs = {};
     mine.forEach(function (p) { slugs[p.slug] = 1; });
+    if (state.fresh) return mine.filter(function (p) { return state.deleted.indexOf(p.slug) < 0; });
     return mine.concat(projects.filter(function (p) { return !slugs[p.slug]; })).filter(function (p) { return state.deleted.indexOf(p.slug) < 0; });
   };
   var scenarioOf = function (slug) {
@@ -198,14 +202,15 @@
   };
   var route = function (p, method, body) {
     var b = parse(body), mm;
+    if (state.login && !/^\/api\/(client-events|release)/.test(p)) return json(401, {error: "unauthorized"});
     if (p === "/api/client-events" || p === "/auth/refresh" || p === "/api/release") return json(200, {});
     if (p === "/auth/logout") { toast(); return json(200, {}); }
     if (p === "/api/brand") return json(200, brand);
     if (method === "GET") {
-      if (p === "/api/me") return json(200, {id: "demo", email: "demo@example.com", name: "Демо", auth_provider: "google", plan_tier: empty ? "free" : state.tier || "creator", can_publish: true});
+      if (p === "/api/me") return json(200, {id: "demo", email: "demo@example.com", name: "Демо", auth_provider: "google", plan_tier: empty || state.fresh ? state.tier || "free" : state.tier || "creator", can_publish: true});
       if (p === "/api/admin/me") return json(200, {email: "demo@example.com", is_admin: false});
-      if (p === "/api/account") return json(200, {balance: empty ? 0 : state.balance, billing: {enabled: true, packs: [{bananas: 3, price_cents: 900}, {bananas: 5, price_cents: 1400}, {bananas: 10, price_cents: 2500}, {bananas: 30, price_cents: 6500}, {bananas: 100, price_cents: 19000}]}, free_balance: empty ? 0 : 3, free_cap: 3});
-      if (p === "/api/account/ledger") return json(200, {entries: state.ledger.concat([
+      if (p === "/api/account") return json(200, {balance: empty ? 0 : state.balance, billing: {enabled: true, packs: [{bananas: 3, price_cents: 900}, {bananas: 5, price_cents: 1400}, {bananas: 10, price_cents: 2500}, {bananas: 30, price_cents: 6500}, {bananas: 100, price_cents: 19000}]}, free_balance: empty ? 0 : state.fresh ? Math.min(3, state.balance) : 3, free_cap: 3});
+      if (p === "/api/account/ledger") return json(200, {entries: state.ledger.concat(state.fresh ? [{id: "l2", delta: 3, reason: "welcome", job_id: null, project_id: null, project_title: null, created_at: new Date().toISOString()}] : [
         {id: "l1", delta: -1, reason: "run", job_id: null, project_id: null, project_title: "Как считать калории по фото", created_at: day(1)},
         {id: "l2", delta: 3, reason: "welcome", job_id: null, project_id: null, project_title: null, created_at: day(9)}])});
       if (p === "/api/account/payments") return json(200, {payments: []});
@@ -389,6 +394,12 @@
     var a = e.target.closest && e.target.closest("a[href]");
     if (!a) return;
     var h = a.getAttribute("href") || "";
+    if (state.login && /\/auth\//.test(h)) {
+      e.preventDefault(); e.stopImmediatePropagation();
+      delete state.login; save();
+      location.replace(BASE + "/");
+      return;
+    }
     if (/\/mock\/\d\.mp4(\?|$)/.test(h)) a.setAttribute("download", "monty-rolik.mp4");
     if (h.indexOf("/preview?job=ai-network&fixtures=1") >= 0) {
       var cur = (location.search.match(/[?&]job=([^&]+)/) || [])[1], j = cur && state.jobs[cur];
